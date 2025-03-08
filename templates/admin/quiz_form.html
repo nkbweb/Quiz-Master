@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Quiz Master V1{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ title }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Quiz Details</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.title.label(class="form-label") }}
+                {{ form.title(class="form-control") }}
+                {% if form.title.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.title.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.chapter_id.label(class="form-label") }}
+                {{ form.chapter_id(class="form-select") }}
+                {% if form.chapter_id.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.chapter_id.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows=4) }}
+                {% if form.description.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.time_limit.label(class="form-label") }}
+                    {{ form.time_limit(class="form-control") }}
+                    <small class="form-text text-muted">Leave blank for no time limit</small>
+                    {% if form.time_limit.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.time_limit.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.pass_percentage.label(class="form-label") }}
+                    {{ form.pass_percentage(class="form-control") }}
+                    {% if form.pass_percentage.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.pass_percentage.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('admin_quizzes') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
