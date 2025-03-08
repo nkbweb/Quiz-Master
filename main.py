@@ -680,4 +680,4 @@ def view_result(attempt_id):
 # Demo data is now generated automatically when the database is empty
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(debug=True)
