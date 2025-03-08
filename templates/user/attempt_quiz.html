@@ -1,0 +1,126 @@
+
+{% extends "base.html" %}
+
+{% block title %}{{ quiz.title }} - Quiz Master V1{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ quiz.title }}</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Quiz Information</h5>
+            {% if quiz.time_limit %}
+            <div class="timer-display">
+                Time Remaining: <span id="timer" class="badge bg-warning text-dark">{{ quiz.time_limit }}:00</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <p><strong>Subject:</strong> {{ quiz.chapter.subject.name }}</p>
+            <p><strong>Chapter:</strong> {{ quiz.chapter.name }}</p>
+            <p class="mb-0"><strong>Total Questions:</strong> {{ quiz.questions|length }}</p>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('submit_quiz', quiz_id=quiz.id) }}" id="quiz-form">
+        {% for question in quiz.questions %}
+        <div class="card mb-4 question-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Question {{ loop.index }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="question-text">{{ question.text }}</p>
+                <div class="options">
+                    {% for option in question.options %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" required>
+                        <label class="form-check-label" for="option_{{ option.id }}">
+                            {{ option.text }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="d-flex justify-content-end mb-4">
+            <button type="submit" class="btn btn-primary">Submit Quiz</button>
+        </div>
+    </form>
+</div>
+<!-- Timer display -->
+    {% if quiz.time_limit %}
+    <div class="quiz-timer position-fixed top-0 end-0 m-3 p-3 bg-primary text-white rounded-pill shadow">
+        <i class="fas fa-clock me-2"></i>Time remaining: <span id="timer">{{ quiz.time_limit }}:00</span>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Prevent going back to avoid abandoned quiz attempts
+    history.pushState(null, null, location.href);
+    window.onpopstate = function() {
+        history.go(1);
+        alert("Please complete and submit the quiz. Navigating away will auto-submit your current answers.");
+    };
+    
+    // Auto-submit form when user tries to close window or navigate away
+    window.addEventListener('beforeunload', function(e) {
+        // Submit the form
+        document.getElementById('quiz-form').submit();
+        
+        // The message won't be shown in modern browsers for security reasons,
+        // but we include it for older browsers
+        var confirmationMessage = 'Your quiz will be submitted if you leave this page.';
+        e.returnValue = confirmationMessage;
+        return confirmationMessage;
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form object
+        const quizForm = document.getElementById('quiz-form');
+        
+        // Prevent back button
+        history.pushState(null, null, location.href);
+        window.onpopstate = function() {
+            history.go(1);
+            alert("Warning: You cannot navigate away from this quiz. To exit, you must submit your answers.");
+        };
+        
+        // Prevent tab/window close without submitting
+        window.addEventListener('beforeunload', function(e) {
+            // Cancel the event
+            e.preventDefault();
+            // Submit the form automatically
+            quizForm.submit();
+            // Chrome requires returnValue to be set
+            e.returnValue = '';
+        });
+        
+        {% if quiz.time_limit %}
+            // Time limit in seconds
+            let timeLimit = {{ quiz.time_limit * 60 }};
+            
+            // Update the timer every second
+            let timerInterval = setInterval(function() {
+                timeLimit--;
+                
+                // Display the time in MM:SS format
+                let minutes = Math.floor(timeLimit / 60);
+                let seconds = timeLimit % 60;
+                document.getElementById('timer').textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                
+                // Automatically submit the form when time runs out
+                if (timeLimit <= 0) {
+                    clearInterval(timerInterval);
+                    quizForm.submit();
+                }
+            }, 1000);
+        {% endif %}
+    });
+</script>
+{% endblock %}
