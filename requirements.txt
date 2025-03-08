@@ -1,4 +1,5 @@
 
+gunicorn==21.2.0
 # Core Flask framework
 Flask==2.3.3
 Werkzeug==2.3.7
