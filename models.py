@@ -14,8 +14,9 @@ class User(db.Model, UserMixin):
     is_admin = db.Column(db.Boolean, default=False)
     date_registered = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
-    quiz_attempts = db.relationship('QuizAttempt', backref='user', lazy=True)
+    # Explicit relationship with foreign key reference
+    quiz_attempts = db.relationship('QuizAttempt', backref='user', lazy=True,
+                                   foreign_keys='QuizAttempt.user_id')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -23,64 +24,79 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    
 class Subject(db.Model):
+    __tablename__ = 'subjects'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     
-    # Relationships
-    chapters = db.relationship('Chapter', backref='subject', lazy=True, cascade="all, delete-orphan")
+    chapters = db.relationship('Chapter', backref='subject', lazy=True, 
+                              cascade="all, delete-orphan",
+                              foreign_keys='Chapter.subject_id')
 
 class Chapter(db.Model):
+    __tablename__ = 'chapters'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'), nullable=False)
     
-    # Relationships
-    quizzes = db.relationship('Quiz', backref='chapter', lazy=True, cascade="all, delete-orphan")
+    quizzes = db.relationship('Quiz', backref='chapter', lazy=True, 
+                             cascade="all, delete-orphan",
+                             foreign_keys='Quiz.chapter_id')
 
 class Quiz(db.Model):
+    __tablename__ = 'quizzes'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
-    time_limit = db.Column(db.Integer)  # in minutes, NULL means no time limit
-    pass_percentage = db.Column(db.Float, default=50.0)  # Percentage needed to pass
+    chapter_id = db.Column(db.Integer, db.ForeignKey('chapters.id'), nullable=False)
+    time_limit = db.Column(db.Integer)
+    pass_percentage = db.Column(db.Float, default=50.0)
     
-    # Relationships
-    questions = db.relationship('Question', backref='quiz', lazy=True, cascade="all, delete-orphan")
-    attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True, cascade="all, delete-orphan")
+    questions = db.relationship('Question', backref='quiz', lazy=True, 
+                               cascade="all, delete-orphan",
+                               foreign_keys='Question.quiz_id')
+    attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True, 
+                              cascade="all, delete-orphan",
+                              foreign_keys='QuizAttempt.quiz_id')
 
 class Question(db.Model):
+    __tablename__ = 'questions'
     id = db.Column(db.Integer, primary_key=True)
-    quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
     text = db.Column(db.Text, nullable=False)
     points = db.Column(db.Integer, default=1)
     
-    # Relationships
-    options = db.relationship('Option', backref='question', lazy=True, cascade="all, delete-orphan")
-    responses = db.relationship('QuizResponse', backref='question', lazy=True)
+    options = db.relationship('Option', backref='question', lazy=True, 
+                             cascade="all, delete-orphan",
+                             foreign_keys='Option.question_id')
+    responses = db.relationship('QuizResponse', backref='question', lazy=True,
+                               foreign_keys='QuizResponse.question_id')
 
 class Option(db.Model):
+    __tablename__ = 'options'
     id = db.Column(db.Integer, primary_key=True)
-    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
     text = db.Column(db.Text, nullable=False)
     is_correct = db.Column(db.Boolean, default=False)
     
-    # Relationships
-    responses = db.relationship('QuizResponse', backref='selected_option', lazy=True)
+    responses = db.relationship('QuizResponse', backref='selected_option', lazy=True,
+                               foreign_keys='QuizResponse.option_id')
 
 class QuizAttempt(db.Model):
+    __tablename__ = 'quiz_attempts'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
     date_taken = db.Column(db.DateTime, default=datetime.utcnow)
     score = db.Column(db.Float)
     is_completed = db.Column(db.Boolean, default=False)
     
-    # Relationships
-    responses = db.relationship('QuizResponse', backref='attempt', lazy=True, cascade="all, delete-orphan")
+    responses = db.relationship('QuizResponse', backref='attempt', lazy=True, 
+                               cascade="all, delete-orphan",
+                               foreign_keys='QuizResponse.attempt_id')
     
     @property
     def passed(self):
@@ -89,7 +105,8 @@ class QuizAttempt(db.Model):
         return self.score >= self.quiz.pass_percentage
 
 class QuizResponse(db.Model):
+    __tablename__ = 'quiz_responses'
     id = db.Column(db.Integer, primary_key=True)
-    attempt_id = db.Column(db.Integer, db.ForeignKey('quiz_attempt.id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
-    option_id = db.Column(db.Integer, db.ForeignKey('option.id'), nullable=False)
+    attempt_id = db.Column(db.Integer, db.ForeignKey('quiz_attempts.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
+    option_id = db.Column(db.Integer, db.ForeignKey('options.id'), nullable=False)
